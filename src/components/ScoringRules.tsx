@@ -9,7 +9,7 @@ const rows: { label: string; detail: string; points: string }[] = [
   { label: 'A 1 puesto', detail: 'Lo pones 3º y es 2º o 4º', points: `${POINTS.exact - 1}` },
   { label: 'A 2 puestos', detail: 'Lo pones 3º y es 1º o 5º', points: `${POINTS.exact - 2}` },
   { label: 'A 3 o más puestos', detail: 'Lo pones 3º y es 6º o peor', points: '0' },
-  { label: 'Premio acertado', detail: 'Tu jugador coincide con el ganador real (sin importar tildes ni mayúsculas)', points: `${POINTS.award}` },
+  { label: 'Premio acertado', detail: 'Tu jugador seleccionado coincide con el ganador real', points: `${POINTS.award}` },
 ];
 
 export function ScoringRules() {
