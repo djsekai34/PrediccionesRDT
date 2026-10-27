@@ -245,7 +245,7 @@ function ConferenceGrid({
   const rankOf = new Map((real ?? []).map((r) => [r.teamId, r.rank]));
 
   return (
-    <section className="card p-3 sm:p-4">
+    <section className="card min-w-0 p-3 sm:p-4">
       <h3 className="mb-2 section-title">
         Conferencia {CONF_LABEL[conf]}
       </h3>
@@ -329,7 +329,7 @@ function AwardsGrid({
   const scoresByPerson = people.map((p) => scoreAwards(p, actualAwards));
 
   return (
-    <section className="card p-4 sm:p-5">
+    <section className="card min-w-0 p-4 sm:p-5">
       <h3 className="mb-3 section-title">Premios</h3>
       <div className="overflow-x-auto">
         <table className="w-full min-w-[30rem] border-separate border-spacing-y-1 text-left text-sm">

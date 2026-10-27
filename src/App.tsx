@@ -158,9 +158,9 @@ export default function App() {
       )}
     >
       <header className="mb-6 flex flex-wrap items-center gap-3">
-        <Logo size={64} className="drop-shadow-[0_0_18px_rgba(11,154,70,0.55)]" />
+        <Logo size={56} className="drop-shadow-[0_0_18px_rgba(11,154,70,0.55)]" />
         <div className="mr-auto">
-          <h1 className="font-display text-5xl font-extrabold leading-none tracking-wide">
+          <h1 className="font-display text-4xl font-extrabold leading-none tracking-wide sm:text-5xl">
             Predicciones<span className="text-rdt-red-400">RDT</span>
           </h1>
           <p className="mt-1 text-sm text-zinc-400">
