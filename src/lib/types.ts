@@ -42,6 +42,8 @@ export interface Season {
   createdAt: number;
   archived: boolean;
   actualAwards: Record<string, string>;
+  /** Chips de sugerencia por premio, guardados por el admin. Vacío = automáticos o fijos. */
+  suggestions?: Record<string, string[]>;
   /** Clasificación final congelada al archivar (la "captura"). */
   standings?: Standings;
   snapshotAt?: number;

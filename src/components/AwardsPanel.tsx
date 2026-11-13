@@ -12,13 +12,14 @@ import { Logo } from './Logo';
 export function AwardsPanel({ profile, readOnly = false }: { profile: Profile; readOnly?: boolean }) {
   const setAward = useStore((s) => s.setAward);
   const { players, loading } = usePlayers();
+  const saved = useStore((s) => s.season.suggestions) ?? {};
 
   return (
     <div className="grid gap-4 md:grid-cols-2">
       {AWARDS.map((award) => {
         const value = profile.awards[award.id] ?? '';
         const list = listFor(players, award.kind);
-        const suggestions = suggestionsFor(award, players);
+        const suggestions = suggestionsFor(award, players, saved[award.id]);
         const selected = value ? list.find((p) => normalizeName(p.name) === normalizeName(value)) : undefined;
 
         return (

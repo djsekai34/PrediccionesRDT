@@ -46,9 +46,15 @@ export const isCoach = (p: Player): boolean => p.pos === COACH_POS;
 export const listFor = (all: Player[], kind?: 'coach'): Player[] =>
   all.filter((p) => isCoach(p) === (kind === 'coach'));
 
-// Chips de sugerencia de un premio. El Novato del año se calcula solo con los novatos de la temporada
+// Chips de sugerencia de un premio. Mandan los que haya guardado el admin; si no, el Novato del año se calcula solo con los novatos de la temporada
 // en curso (ordenados por puesto de draft; sin orden de draft usa la lista fija); el resto usa la lista fija de `data/awards.ts`.
-export function suggestionsFor(award: { id: string; suggestions: string[] }, all: Player[], max = 8): string[] {
+export function suggestionsFor(
+  award: { id: string; suggestions: string[] },
+  all: Player[],
+  saved: string[] = [],
+  max = 8,
+): string[] {
+  if (saved.length) return saved;
   if (award.id !== 'roy') return award.suggestions;
   const rookies = all
     .filter((p) => p.rookie && p.pick !== undefined)

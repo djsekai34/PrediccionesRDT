@@ -58,6 +58,7 @@ interface Store {
   setAward: (awardId: string, value: string) => void;
 
   setActualAward: (awardId: string, value: string) => void;
+  setSuggestions: (awardId: string, names: string[]) => void;
 }
 
 const profilesCol = () => collection(db!, 'profiles');
@@ -82,6 +83,7 @@ function toSeason(id: string, d: DocumentData): Season {
     createdAt: Number(d.createdAt ?? 0),
     archived: Boolean(d.archived),
     actualAwards: d.actualAwards ?? {},
+    suggestions: d.suggestions ?? {},
     standings: d.standings,
     snapshotAt: d.snapshotAt,
   };
@@ -341,6 +343,11 @@ export const useStore = create<Store>()(
         setActualAward: (awardId, value) => {
           if (!get().isAdmin) return;
           write(setDoc(seasonDoc(get().season.id), { actualAwards: { [awardId]: value } }, { merge: true }));
+        },
+
+        setSuggestions: (awardId, names) => {
+          if (!get().isAdmin) return;
+          write(setDoc(seasonDoc(get().season.id), { suggestions: { [awardId]: names } }, { merge: true }));
         },
       };
     },

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowLeft, CalendarPlus, Crown, ListOrdered, Medal, Trash2 } from 'lucide-react';
+import { ArrowLeft, CalendarPlus, Crown, Lightbulb, ListOrdered, Medal, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { fetchStandings } from '../lib/espn';
 import { ArchivedBanner, SeasonSwitcher } from './SeasonSwitcher';
@@ -7,7 +7,8 @@ import { Logo } from './Logo';
 import { href, navigate } from '../lib/route';
 import clsx from 'clsx';
 import { useActiveProfile, useStore } from '../store/useStore';
-import { AWARDS } from '../data/awards';
+import { AWARDS, type Award } from '../data/awards';
+import { fetchSuggestionsFromUrl, parseNames } from '../lib/suggestions';
 import { usePlayers } from '../hooks/usePlayers';
 import { listFor, suggestionsFor } from '../lib/players';
 import { AdminBar } from './AdminBar';
@@ -16,12 +17,13 @@ import { ConferencePicks } from './ConferencePicks';
 import { AwardsPanel } from './AwardsPanel';
 import { PlayerCombobox } from './PlayerCombobox';
 
-type Tab = 'picks' | 'awards' | 'winners' | 'seasons';
+type Tab = 'picks' | 'awards' | 'winners' | 'suggestions' | 'seasons';
 
 function WinnersPanel() {
   const actualAwards = useStore((s) => s.actualAwards);
   const setActualAward = useStore((s) => s.setActualAward);
   const { players, loading } = usePlayers();
+  const saved = useStore((s) => s.season.suggestions) ?? {};
 
   return (
     <section className="mx-auto max-w-2xl card p-5">
@@ -39,11 +41,119 @@ function WinnersPanel() {
               onChange={(v) => setActualAward(award.id, v)}
               players={listFor(players, award.kind)}
               kind={award.kind}
-              suggestions={suggestionsFor(award, players)}
+              suggestions={suggestionsFor(award, players, saved[award.id])}
               loading={loading}
               placeholder={award.kind === 'coach' ? 'Busca un entrenador' : undefined}
             />
           </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+function SuggestionEditor({ award, saved }: { award: Award; saved: string[] }) {
+  const setSuggestions = useStore((s) => s.setSuggestions);
+  const [url, setUrl] = useState('');
+  const [text, setText] = useState(saved.join('\n'));
+  const [busy, setBusy] = useState(false);
+
+  const names = parseNames(text);
+  const dirty = names.join('\n') !== saved.join('\n');
+
+  async function read() {
+    setBusy(true);
+    try {
+      setText((await fetchSuggestionsFromUrl(url.trim())).join('\n'));
+      toast.success('Tabla leída: revisa la lista y guarda');
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'No se pudo leer la página.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <li className="rounded-xl border border-zinc-800 p-4">
+      <div className="flex items-baseline justify-between gap-3">
+        <p className="font-medium">{award.label}</p>
+        <span className="text-xs text-zinc-500">
+          {saved.length ? `${saved.length} guardados` : 'Automáticos o fijos'}
+        </span>
+      </div>
+
+      <div className="mt-3 flex flex-wrap gap-2">
+        <input
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          placeholder="https://www.basketball-reference.com/friv/mvp.html"
+          className="min-w-0 flex-1 rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm outline-none focus:border-brand-500"
+        />
+        <button
+          onClick={read}
+          disabled={busy || !url.trim()}
+          className="rounded-lg border border-zinc-700 px-3 py-2 text-sm text-zinc-200 transition hover:border-zinc-500 disabled:opacity-40"
+        >
+          {busy ? 'Leyendo…' : 'Leer'}
+        </button>
+      </div>
+
+      <textarea
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        rows={5}
+        placeholder="Un nombre por línea (o pulsa Leer con una URL)"
+        className="mt-2 w-full resize-y rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm outline-none focus:border-brand-500"
+      />
+
+      <div className="mt-2 flex items-center justify-between gap-2">
+        <span className="text-xs text-zinc-500">{names.length}/15 nombres</span>
+        <span className="flex gap-2">
+          {saved.length > 0 && (
+            <button
+              onClick={() => {
+                setSuggestions(award.id, []);
+                setText('');
+              }}
+              className="rounded-lg px-3 py-1.5 text-sm text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-100"
+            >
+              Quitar
+            </button>
+          )}
+          <button
+            onClick={() => {
+              setSuggestions(award.id, names);
+              toast.success('Sugerencias guardadas');
+            }}
+            disabled={!dirty}
+            className="rounded-lg bg-brand-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-brand-500 disabled:opacity-40"
+          >
+            Guardar
+          </button>
+        </span>
+      </div>
+    </li>
+  );
+}
+
+function SuggestionsPanel() {
+  const season = useStore((s) => s.season);
+  const saved = season.suggestions ?? {};
+
+  return (
+    <section className="mx-auto max-w-2xl card p-5">
+      <h2 className="section-title">Sugerencias</h2>
+      <p className="mb-4 mt-1 text-sm text-zinc-500">
+        Los nombres que salen como botones al elegir cada premio. Pega la URL de una tabla de Basketball Reference y
+        pulsa Leer, o escribe los nombres a mano. Sin nada guardado se usan los automáticos (Novato) o los fijos.
+      </p>
+      <ul className="space-y-3">
+        {AWARDS.map((award) => (
+          <SuggestionEditor
+            key={`${season.id}-${award.id}-${(saved[award.id] ?? []).join('|')}`}
+            award={award}
+            saved={saved[award.id] ?? []}
+          />
         ))}
       </ul>
     </section>
@@ -234,6 +344,7 @@ export function AdminPage() {
     { id: 'picks', label: 'Predicciones', icon: ListOrdered },
     { id: 'awards', label: 'Premios', icon: Crown },
     { id: 'winners', label: 'Ganadores reales', icon: Medal },
+    { id: 'suggestions', label: 'Sugerencias', icon: Lightbulb },
     { id: 'seasons', label: 'Temporadas', icon: CalendarPlus },
   ];
 
@@ -297,7 +408,7 @@ export function AdminPage() {
           <ArchivedBanner />
         </div>
 
-        {tab !== 'winners' && tab !== 'seasons' && (
+        {tab !== 'winners' && tab !== 'suggestions' && tab !== 'seasons' && (
           <div className="mt-5">
             <ProfileBar manage />
           </div>
@@ -312,6 +423,7 @@ export function AdminPage() {
           )}
           {tab === 'awards' && profile && <AwardsPanel profile={profile} />}
           {tab === 'winners' && <WinnersPanel />}
+          {tab === 'suggestions' && <SuggestionsPanel />}
           {tab === 'seasons' && <SeasonsPanel />}
         </main>
       </>
