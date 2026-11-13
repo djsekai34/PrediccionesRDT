@@ -32,7 +32,7 @@ Entras con Google y solo pueden editar las cuentas autorizadas.
 - **Predicciones**: crear y quitar participantes, elegir y ordenar su top 10 de cada conferencia arrastrando equipos.
 - **Premios**: elegir el jugador o entrenador de cada participante, con buscador y sugerencias.
 - **Ganadores reales**: apuntar quién gana cada premio; puntúa al instante.
-- **Sugerencias**: los nombres que salen como botones al elegir cada premio. Se pega la URL de una tabla de Basketball Reference y se pulsa *Leer* (una función de Vercel, `api/suggestions.ts`, lee la tabla y solo responde a admins), o se escriben a mano. Se guardan por temporada; sin nada guardado se usan los automáticos (Novato) o los fijos.
+- **Sugerencias**: los nombres que salen como botones al elegir cada premio. Se pega la URL de una tabla de Basketball Reference o Hashtag Basketball y se pulsa *Leer* (una función de Vercel, `api/suggestions.ts`, lee la tabla y solo responde a admins), o se escriben a mano. Se guardan por temporada; sin nada guardado se usan los automáticos (Novato) o los fijos.
 - **Temporadas**:
   - *Archivar vigente y crear nueva*: guarda la clasificación final como una captura y abre la siguiente (por ejemplo `2027-28`). Un modal permite elegir qué participantes repiten, con las predicciones vacías.
   - *Desarchivar*: la temporada vuelve a usar la clasificación en directo.

@@ -144,8 +144,8 @@ function SuggestionsPanel() {
     <section className="mx-auto max-w-2xl card p-5">
       <h2 className="section-title">Sugerencias</h2>
       <p className="mb-4 mt-1 text-sm text-zinc-500">
-        Los nombres que salen como botones al elegir cada premio. Pega la URL de una tabla de Basketball Reference y
-        pulsa Leer, o escribe los nombres a mano. Sin nada guardado se usan los automáticos (Novato) o los fijos.
+        Los nombres que salen como botones al elegir cada premio. Pega la URL de una tabla de Basketball Reference o
+        Hashtag Basketball y pulsa Leer, o escribe los nombres a mano. Sin nada guardado se usan los automáticos (Novato) o los fijos.
       </p>
       <ul className="space-y-3">
         {AWARDS.map((award) => (

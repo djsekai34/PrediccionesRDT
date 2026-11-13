@@ -1,7 +1,7 @@
-// Función de Vercel: lee una página de Basketball Reference (u otra con una tabla de jugadores)
+// Función de Vercel: lee una página de Basketball Reference o Hashtag Basketball (con una tabla de jugadores)
 // y devuelve los nombres de la primera tabla con columna "Player". Solo la puede usar un admin.
 
-const ALLOWED_HOST = 'basketball-reference.com';
+const ALLOWED_HOSTS = ['basketball-reference.com', 'hashtagbasketball.com'];
 const MAX_NAMES = 15;
 
 const json = (body: unknown, status = 200): Response =>
@@ -32,7 +32,8 @@ async function isAdmin(request: Request): Promise<boolean> {
   return Boolean(email && user?.emailVerified && admins.includes(email));
 }
 
-const hostAllowed = (host: string): boolean => host === ALLOWED_HOST || host.endsWith(`.${ALLOWED_HOST}`);
+const hostAllowed = (host: string): boolean =>
+  ALLOWED_HOSTS.some((allowed) => host === allowed || host.endsWith(`.${allowed}`));
 
 const ENTITIES: Record<string, string> = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ' };
 
@@ -95,7 +96,7 @@ export async function GET(request: Request): Promise<Response> {
     return json({ error: 'La URL no es válida.' }, 400);
   }
   if (target.protocol !== 'https:' || !hostAllowed(target.hostname)) {
-    return json({ error: 'Solo se admiten páginas de basketball-reference.com.' }, 400);
+    return json({ error: 'Solo se admiten páginas de basketball-reference.com y hashtagbasketball.com.' }, 400);
   }
 
   let html: string;
