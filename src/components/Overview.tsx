@@ -10,7 +10,7 @@ import { CONF_LABEL, TEAMS_BY_ID } from '../data/teams';
 import { AWARDS } from '../data/awards';
 import { useStandings } from '../hooks/useStandings';
 import { useStore } from '../store/useStore';
-import { MAX_PER_CONFERENCE, POINTS, hasStarted, scoreAwards, scoreConference, scoreProfile } from '../lib/scoring';
+import { MAX_PER_CONFERENCE, POINTS, compareRanking, hasStarted, scoreAwards, scoreConference, scoreProfile } from '../lib/scoring';
 import { TeamLogo } from './TeamLogo';
 
 const CONFS: Conference[] = ['east', 'west'];
@@ -126,7 +126,7 @@ function Leaderboard({
 }) {
   const rows = people
     .map((p) => ({ p, t: scoreProfile(p, standings, actualAwards) }))
-    .sort((a, b) => b.t.total - a.t.total);
+    .sort((a, b) => compareRanking({ name: a.p.name, t: a.t }, { name: b.p.name, t: b.t }));
 
   const maxTotal = MAX_PER_CONFERENCE * 2 + AWARDS.length * POINTS.award;
   const podium = rows.slice(0, 3);
@@ -153,7 +153,7 @@ function Leaderboard({
               <span className={clsx('inline-flex items-center gap-1.5 font-display text-xl font-bold', PODIUM[i].medal)}>
                 <Medal size={18} /> {i + 1}º
               </span>
-              <span className="text-xs text-zinc-500">
+              <span className="text-sm text-zinc-400">
                 {t.east.exact + t.west.exact} {t.east.exact + t.west.exact === 1 ? 'exacto' : 'exactos'}
               </span>
             </div>
@@ -193,6 +193,9 @@ function Leaderboard({
                 </span>
                 <span>
                   Premios <b className="tabular-nums text-zinc-200">{t.awards}</b>
+                </span>
+                <span>
+                  Exactos <b className="tabular-nums text-zinc-200">{t.east.exact + t.west.exact}</b>
                 </span>
               </span>
               <NumberFlow value={t.total} className="w-12 text-right font-display text-2xl font-bold text-brand-300" />

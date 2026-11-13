@@ -6,6 +6,10 @@ export interface Player {
   name: string;
   team?: string;
   pos?: string;
+  /** Novato de la temporada en curso (0 años de experiencia en ESPN). */
+  rookie?: boolean;
+  /** Puesto global del draft (solo novatos de 1ª ronda). */
+  pick?: number;
 }
 
 export const headshotUrl = (id: string): string =>
@@ -19,6 +23,7 @@ interface EspnAthlete {
   displayName?: string;
   fullName?: string;
   position?: { abbreviation?: string };
+  experience?: { years?: number };
 }
 
 interface EspnCoach {
@@ -30,6 +35,7 @@ interface EspnCoach {
 interface EspnRoster {
   athletes?: EspnAthlete[];
   coach?: EspnCoach[];
+  season?: { year?: number };
 }
 
 export const COACH_POS = 'Entrenador';
@@ -40,7 +46,19 @@ export const isCoach = (p: Player): boolean => p.pos === COACH_POS;
 export const listFor = (all: Player[], kind?: 'coach'): Player[] =>
   all.filter((p) => isCoach(p) === (kind === 'coach'));
 
-const CACHE_KEY = 'nba-players-v2';
+// Chips de sugerencia de un premio. El Novato del año se calcula solo con los novatos de la temporada
+// en curso (ordenados por puesto de draft; sin orden de draft usa la lista fija); el resto usa la lista fija de `data/awards.ts`.
+export function suggestionsFor(award: { id: string; suggestions: string[] }, all: Player[], max = 8): string[] {
+  if (award.id !== 'roy') return award.suggestions;
+  const rookies = all
+    .filter((p) => p.rookie && p.pick !== undefined)
+    .sort((a, b) => (a.pick ?? 0) - (b.pick ?? 0))
+    .slice(0, max)
+    .map((p) => p.name);
+  return rookies.length ? rookies : award.suggestions;
+}
+
+const CACHE_KEY = 'nba-players-v4';
 const DAY = 24 * 60 * 60 * 1000;
 
 interface Cache {
@@ -65,19 +83,61 @@ function writeCache(players: Player[]): void {
   }
 }
 
+const draftUrl = (year: number): string =>
+  `https://sports.core.api.espn.com/v2/sports/basketball/leagues/nba/seasons/${year}/draft/rounds`;
+
+interface DraftRounds {
+  items?: { picks?: { overall?: number; athlete?: { $ref?: string } }[] }[];
+}
+
+// Los novatos de la temporada salieron del draft del año anterior. Se leen las 30 elecciones de 1ª ronda
+// y se cruzan por nombre con las plantillas. Si falla, simplemente no hay orden de draft.
+async function attachDraftOrder(players: Player[], draftYear: number): Promise<void> {
+  if (!draftYear || !players.some((p) => p.rookie)) return;
+  try {
+    const res = await fetch(draftUrl(draftYear));
+    if (!res.ok) return;
+    const first = ((await res.json()) as DraftRounds).items?.[0]?.picks ?? [];
+
+    const named = await Promise.all(
+      first.map(async ({ overall, athlete }) => {
+        const ref = athlete?.$ref?.replace(/^http:/, 'https:');
+        if (!ref || !overall) return null;
+        try {
+          const r = await fetch(ref);
+          const a = (await r.json()) as { displayName?: string; fullName?: string };
+          const name = a.displayName ?? a.fullName;
+          return name ? { name: normalizeName(name), overall } : null;
+        } catch {
+          return null;
+        }
+      }),
+    );
+
+    const order = new Map(named.flatMap((n) => (n ? [[n.name, n.overall] as const] : [])));
+    for (const p of players) if (p.rookie) p.pick = order.get(normalizeName(p.name));
+  } catch {
+    // sin orden de draft, los chips usan la lista fija
+  }
+}
+
 // Todas las plantillas de la NBA (30 peticiones en paralelo), cacheadas 24 h en el navegador.
 export async function fetchPlayers(): Promise<Player[]> {
   const cached = readCache();
   if (cached && Date.now() - cached.at < DAY) return cached.players;
 
+  let seasonYear = 0;
   const results = await Promise.allSettled(
     TEAMS.map(async (team): Promise<Player[]> => {
       const res = await fetch(rosterUrl(team.id));
       if (!res.ok) throw new Error(`ESPN respondió ${res.status}`);
       const json = (await res.json()) as EspnRoster;
+      seasonYear = json.season?.year ?? seasonYear;
       const players = (json.athletes ?? []).flatMap((a) => {
         const name = a.displayName ?? a.fullName;
-        return name ? [{ id: a.id, name, team: team.abbr, pos: a.position?.abbreviation }] : [];
+        if (!name) return [];
+        const rookie = a.experience?.years === 0;
+        return [{ id: a.id, name, team: team.abbr, pos: a.position?.abbreviation, ...(rookie && { rookie }) }];
       });
       const coaches = (json.coach ?? []).flatMap((c) => {
         const name = [c.firstName, c.lastName].filter(Boolean).join(' ');
@@ -97,6 +157,8 @@ export async function fetchPlayers(): Promise<Player[]> {
     if (cached) return cached.players;
     throw new Error('Plantillas no disponibles');
   }
+
+  await attachDraftOrder(players, seasonYear - 1);
 
   writeCache(players);
   return players;

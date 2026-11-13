@@ -9,7 +9,7 @@ import clsx from 'clsx';
 import { useActiveProfile, useStore } from '../store/useStore';
 import { AWARDS } from '../data/awards';
 import { usePlayers } from '../hooks/usePlayers';
-import { listFor } from '../lib/players';
+import { listFor, suggestionsFor } from '../lib/players';
 import { AdminBar } from './AdminBar';
 import { NewProfileForm, ProfileBar } from './ProfileBar';
 import { ConferencePicks } from './ConferencePicks';
@@ -39,7 +39,7 @@ function WinnersPanel() {
               onChange={(v) => setActualAward(award.id, v)}
               players={listFor(players, award.kind)}
               kind={award.kind}
-              suggestions={award.suggestions}
+              suggestions={suggestionsFor(award, players)}
               loading={loading}
               placeholder={award.kind === 'coach' ? 'Busca un entrenador' : undefined}
             />

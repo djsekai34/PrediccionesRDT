@@ -4,7 +4,7 @@ import { AWARDS } from '../data/awards';
 import { useStore } from '../store/useStore';
 import { normalizeName } from '../lib/scoring';
 import { usePlayers } from '../hooks/usePlayers';
-import { listFor } from '../lib/players';
+import { listFor, suggestionsFor } from '../lib/players';
 import { PlayerCombobox } from './PlayerCombobox';
 import { Avatar } from './Avatar';
 import { Logo } from './Logo';
@@ -18,6 +18,7 @@ export function AwardsPanel({ profile, readOnly = false }: { profile: Profile; r
       {AWARDS.map((award) => {
         const value = profile.awards[award.id] ?? '';
         const list = listFor(players, award.kind);
+        const suggestions = suggestionsFor(award, players);
         const selected = value ? list.find((p) => normalizeName(p.name) === normalizeName(value)) : undefined;
 
         return (
@@ -60,13 +61,13 @@ export function AwardsPanel({ profile, readOnly = false }: { profile: Profile; r
                   onChange={(v) => setAward(award.id, v)}
                   players={list}
                   kind={award.kind}
-                  suggestions={award.suggestions}
+                  suggestions={suggestions}
                   loading={loading}
                   placeholder={award.kind === 'coach' ? 'Busca un entrenador' : undefined}
                 />
 
                 <div className="mt-3 flex flex-wrap gap-1.5">
-                  {award.suggestions.map((s) => (
+                  {suggestions.map((s) => (
                     <button
                       key={s}
                       onClick={() => setAward(award.id, s)}

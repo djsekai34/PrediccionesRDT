@@ -2,23 +2,25 @@
 node_modules
 dist
 .vercel
-
+ 
 # Variables de entorno (las reales van en Vercel)
 .env
 .env.*
 !.env.example
-
+ 
 # Firebase local
 .firebase
+firebase.json
+firestore.rules
 firebase-debug.log*
 firestore-debug.log
 ui-debug.log
-
+ 
 # Logs y caches
 *.log
 *.tsbuildinfo
 .vite
-
+ 
 # Sistema y editores
 .DS_Store
 Thumbs.db

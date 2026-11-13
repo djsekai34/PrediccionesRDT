@@ -4,6 +4,14 @@ import { MAX_PER_CONFERENCE, POINTS } from '../lib/scoring';
 const MAX_AWARDS = AWARDS.length * POINTS.award;
 const MAX_TOTAL = MAX_PER_CONFERENCE * 2 + MAX_AWARDS;
 
+const TIEBREAKERS: { label: string; detail: string }[] = [
+  { label: 'Más equipos exactos', detail: 'Posiciones clavadas, sumando Este y Oeste' },
+  { label: 'Más premios acertados', detail: 'Cuando ya se hayan decidido' },
+  { label: 'Más equipos a 1 puesto', detail: 'Los que dan 2 puntos' },
+  { label: 'Más equipos a 2 puestos', detail: 'Los que dan 1 punto' },
+  { label: 'Orden alfabético', detail: 'Por nombre, si todo lo anterior es igual' },
+];
+
 const rows: { label: string; detail: string; points: string }[] = [
   { label: 'Posición exacta', detail: 'Pones al equipo 3º y es 3º', points: `${POINTS.exact}` },
   { label: 'A 1 puesto', detail: 'Lo pones 3º y es 2º o 4º', points: `${POINTS.exact - 1}` },
@@ -53,6 +61,24 @@ export function ScoringRules() {
             Pones a los Lakers 5º y van 13º: <b className="text-red-400">0 pts</b>.
           </li>
         </ul>
+      </section>
+
+      <section className="card p-5">
+        <h3 className="font-display text-2xl font-bold uppercase tracking-wide">Desempate</h3>
+        <p className="mt-1 text-sm text-zinc-400">
+          Si dos personas tienen los mismos puntos, va por delante quien cumpla antes este orden:
+        </p>
+        <ol className="mt-3 divide-y divide-zinc-800/70">
+          {TIEBREAKERS.map((t, i) => (
+            <li key={t.label} className="flex items-center gap-3 py-2.5">
+              <span className="w-6 text-center font-display text-2xl font-bold text-brand-400">{i + 1}</span>
+              <div className="min-w-0">
+                <p className="text-sm font-medium">{t.label}</p>
+                <p className="text-xs text-zinc-500">{t.detail}</p>
+              </div>
+            </li>
+          ))}
+        </ol>
       </section>
 
       <section className="card p-5">

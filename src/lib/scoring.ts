@@ -22,6 +22,9 @@ export interface ConferenceScore {
   rows: TeamScore[];
   total: number;
   exact: number;
+  /** Equipos a 1 puesto (2 pts) y a 2 puestos (1 pt), para desempatar. */
+  oneOff: number;
+  twoOff: number;
 }
 
 export function hasStarted(standings: Standings): boolean {
@@ -43,6 +46,8 @@ export function scoreConference(picks: string[], actual: StandingRow[]): Confere
     rows,
     total: rows.reduce((sum, r) => sum + r.points, 0),
     exact: rows.filter((r) => r.diff === 0).length,
+    oneOff: rows.filter((r) => r.diff === 1).length,
+    twoOff: rows.filter((r) => r.diff === 2).length,
   };
 }
 
@@ -88,9 +93,28 @@ export function scoreProfile(
   actualAwards: Record<string, string>,
 ): ProfileTotals {
   const started = hasStarted(standings);
-  const empty: ConferenceScore = { rows: [], total: 0, exact: 0 };
+  const empty: ConferenceScore = { rows: [], total: 0, exact: 0, oneOff: 0, twoOff: 0 };
   const east = started ? scoreConference(profile.picks.east, standings.east) : empty;
   const west = started ? scoreConference(profile.picks.west, standings.west) : empty;
   const awards = awardsTotal(scoreAwards(profile, actualAwards));
   return { east, west, awards, total: east.total + west.total + awards };
+}
+
+// Orden del ranking: puntos, luego equipos exactos, premios acertados, equipos a 1 puesto,
+// equipos a 2 puestos y, por último, orden alfabético.
+export function compareRanking(
+  a: { name: string; t: ProfileTotals },
+  b: { name: string; t: ProfileTotals },
+): number {
+  const key = (x: ProfileTotals): number[] => [
+    x.total,
+    x.east.exact + x.west.exact,
+    x.awards,
+    x.east.oneOff + x.west.oneOff,
+    x.east.twoOff + x.west.twoOff,
+  ];
+  const ka = key(a.t);
+  const kb = key(b.t);
+  for (let i = 0; i < ka.length; i++) if (ka[i] !== kb[i]) return kb[i] - ka[i];
+  return a.name.localeCompare(b.name, 'es', { sensitivity: 'base' });
 }
