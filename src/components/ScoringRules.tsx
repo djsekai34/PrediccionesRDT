@@ -6,7 +6,7 @@ const MAX_TOTAL = MAX_PER_CONFERENCE * 2 + MAX_AWARDS;
 
 const TIEBREAKERS: { label: string; detail: string }[] = [
   { label: 'Más equipos exactos', detail: 'Posiciones clavadas, sumando Este y Oeste' },
-  { label: 'Más premios acertados', detail: 'Cuando ya se hayan decidido' },
+  { label: 'Más premios acertados', detail: 'El que haya acertado más premios' },
   { label: 'Más equipos a 1 puesto', detail: 'Los que dan 2 puntos' },
   { label: 'Más equipos a 2 puestos', detail: 'Los que dan 1 punto' },
   { label: 'Orden alfabético', detail: 'Por nombre, si todo lo anterior es igual' },
