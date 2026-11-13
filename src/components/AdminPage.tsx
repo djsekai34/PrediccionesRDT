@@ -34,21 +34,40 @@ function WinnersPanel() {
         Apunta aquí quién gana cada premio cuando se anuncie. Es común a todas las personas y puntúa al instante.
       </p>
       <ul className="space-y-3">
-        {AWARDS.map((award) => (
-          <li key={award.id}>
-            <p className="mb-1 text-sm font-medium">{award.label}</p>
-            <PlayerCombobox
-              id={`winner-${award.id}`}
-              value={actualAwards[award.id] ?? ''}
-              onChange={(v) => setActualAward(award.id, v)}
-              players={listFor(players, award.kind)}
-              kind={award.kind}
-              suggestions={suggestionsFor(award, players, saved[award.id])}
-              loading={loading}
-              placeholder={award.kind === 'coach' ? 'Busca un entrenador' : undefined}
-            />
-          </li>
-        ))}
+        {AWARDS.map((award) => {
+          const value = actualAwards[award.id] ?? '';
+          const selected = players.find((p) => normalizeName(p.name) === normalizeName(value));
+          return (
+            <li key={award.id}>
+              <p className="mb-1 text-sm font-medium">{award.label}</p>
+              <div className="flex items-center gap-3">
+                {value ? (
+                  <Avatar
+                    name={value}
+                    id={selected?.id}
+                    coach={award.kind === 'coach'}
+                    size={44}
+                    className="ring-2 ring-brand-500/70"
+                  />
+                ) : (
+                  <span className="size-11 shrink-0 rounded-full border border-dashed border-zinc-700" />
+                )}
+                <div className="min-w-0 flex-1">
+                  <PlayerCombobox
+                    id={`winner-${award.id}`}
+                    value={value}
+                    onChange={(v) => setActualAward(award.id, v)}
+                    players={listFor(players, award.kind)}
+                    kind={award.kind}
+                    suggestions={suggestionsFor(award, players, saved[award.id])}
+                    loading={loading}
+                    placeholder={award.kind === 'coach' ? 'Busca un entrenador' : undefined}
+                  />
+                </div>
+              </div>
+            </li>
+          );
+        })}
       </ul>
     </section>
   );
@@ -193,10 +212,20 @@ function SuggestionsPanel() {
 
   return (
     <section className="mx-auto max-w-2xl card p-5">
-      <h2 className="section-title">Sugerencias</h2>
-      <p className="mb-4 mt-1 text-sm text-zinc-500">
-        Los nombres que salen como botones al elegir cada premio. Pega la URL de una tabla de Basketball Reference o
-        Hashtag Basketball y pulsa Leer, o escribe los nombres a mano. Sin nada guardado se usan los automáticos (Novato) o los fijos.
+      <h2 className="section-title">Premios en juego</h2>
+      <p className="mt-1 text-sm text-zinc-500">
+        La lista de favoritos de cada premio. El primero cuenta como ganador provisional y suma puntos hasta que se
+        confirme el real. La lista se actualiza a mano con estos pasos, y el ganador real también se puede apuntar en
+        la pestaña Ganadores reales.
+      </p>
+      <ol className="mb-4 mt-3 list-decimal space-y-1 pl-5 text-sm text-zinc-400">
+        <li>Pega la URL de la tabla (Basketball Reference o Hashtag Basketball) en el premio.</li>
+        <li>Pulsa <b className="text-zinc-200">Leer</b>: se rellena la lista con los primeros nombres. Revísala o corrígela.</li>
+        <li>Pulsa <b className="text-zinc-200">Guardar</b> para aplicarla. Hasta entonces no cambia nada.</li>
+        <li>Cuando se anuncie el ganador, usa <b className="text-zinc-200">¿Es el premio real? → Sí</b>.</li>
+      </ol>
+      <p className="mb-4 text-xs text-zinc-500">
+        Si Leer falla, escribe los nombres a mano, uno por línea.
       </p>
       <ul className="space-y-3">
         {AWARDS.map((award) => (
@@ -396,7 +425,7 @@ export function AdminPage() {
     { id: 'picks', label: 'Predicciones', icon: ListOrdered },
     { id: 'awards', label: 'Premios', icon: Crown },
     { id: 'winners', label: 'Ganadores reales', icon: Medal },
-    { id: 'suggestions', label: 'Sugerencias', icon: Lightbulb },
+    { id: 'suggestions', label: 'Premios en juego', icon: Lightbulb },
     { id: 'seasons', label: 'Temporadas', icon: CalendarPlus },
   ];
 
