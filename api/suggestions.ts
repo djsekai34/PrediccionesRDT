@@ -37,9 +37,8 @@ const hostAllowed = (host: string): boolean =>
 
 const ENTITIES: Record<string, string> = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ' };
 
-function textOf(html: string): string {
-  return html
-    .replace(/<[^>]*>/g, '')
+function decode(text: string): string {
+  return text
     .replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (m, e: string) => {
       if (e[0] === '#') {
         const code = e[1].toLowerCase() === 'x' ? parseInt(e.slice(2), 16) : parseInt(e.slice(1), 10);
@@ -49,6 +48,21 @@ function textOf(html: string): string {
     })
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+const textOf = (html: string): string => decode(html.replace(/<[^>]*>/g, ''));
+
+// Hashtag Basketball pone el nombre y luego su versión corta ("Yaxel Lendeborg" + "Y.Lendeborg") en la misma
+// celda, y al quitar las etiquetas quedan pegados. Nos quedamos con el primer trozo de texto, y si aun así
+// llegan pegados se quita la versión corta final.
+function nameOf(cellHtml: string): string {
+  const first = cellHtml.split(/<[^>]*>/).map(decode).find(Boolean) ?? '';
+  const m = /^(.*?[a-z.'’])([A-Z]\.\s?[\p{L}'’ .-]+)$/u.exec(first);
+  if (m) {
+    const surname = m[2].replace(/^[A-Z]\.\s?/, '');
+    if (m[1].startsWith(m[2][0]) && m[1].endsWith(surname)) return m[1].trim();
+  }
+  return first;
 }
 
 const isNameHeader = (s: string): boolean => /^(player|name)$/i.test(s);
@@ -65,6 +79,7 @@ function playersFromHtml(html: string): string[] {
     for (const row of table.match(/<tr[\s\S]*?<\/tr>/gi) ?? []) {
       const cells = [...row.matchAll(/<(t[dh])\b([^>]*)>([\s\S]*?)<\/\1>/gi)].map((m) => ({
         attrs: m[2],
+        html: m[3],
         text: textOf(m[3]),
       }));
 
@@ -74,7 +89,8 @@ function playersFromHtml(html: string): string[] {
       }
 
       const byStat = cells.find((c) => /data-stat="(player|name_display|name)"/i.test(c.attrs));
-      const name = (byStat ?? cells[col])?.text.replace(/[*†‡]+$/, '').trim();
+      const cell = byStat ?? cells[col];
+      const name = cell ? nameOf(cell.html).replace(/[*†‡]+$/, '').trim() : '';
       if (name && !isNameHeader(name)) names.push(name);
     }
 
