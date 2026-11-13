@@ -10,7 +10,9 @@ import { useActiveProfile, useStore } from '../store/useStore';
 import { AWARDS, type Award } from '../data/awards';
 import { fetchSuggestionsFromUrl, parseNames } from '../lib/suggestions';
 import { usePlayers } from '../hooks/usePlayers';
-import { listFor, suggestionsFor } from '../lib/players';
+import { listFor, suggestionsFor, type Player } from '../lib/players';
+import { normalizeName } from '../lib/scoring';
+import { Avatar } from './Avatar';
 import { AdminBar } from './AdminBar';
 import { NewProfileForm, ProfileBar } from './ProfileBar';
 import { ConferencePicks } from './ConferencePicks';
@@ -52,7 +54,53 @@ function WinnersPanel() {
   );
 }
 
-function SuggestionEditor({ award, saved }: { award: Award; saved: string[] }) {
+function LeaderPanel({ award, leader, players }: { award: Award; leader: string; players: Player[] }) {
+  const real = useStore((s) => s.actualAwards[award.id] ?? '');
+  const setActualAward = useStore((s) => s.setActualAward);
+  const player = players.find((p) => normalizeName(p.name) === normalizeName(leader));
+  const confirmed = normalizeName(real) === normalizeName(leader);
+
+  return (
+    <div
+      className={clsx(
+        'mt-3 flex flex-wrap items-center gap-3 rounded-xl border p-3',
+        confirmed ? 'border-emerald-500/40 bg-emerald-500/5' : 'border-zinc-800 bg-zinc-900/60',
+      )}
+    >
+      <Avatar name={leader} id={player?.id} coach={award.kind === 'coach'} size={52} />
+      <div className="min-w-0 flex-1">
+        <p className="truncate font-semibold">{leader}</p>
+        <p className="text-xs text-zinc-500">
+          {confirmed ? 'Confirmado como premio real' : 'Va primero en la lista (provisional)'}
+        </p>
+        {!confirmed && real && <p className="text-xs text-amber-300">Ahora mismo el real guardado es {real}.</p>}
+      </div>
+      {confirmed ? (
+        <button
+          onClick={() => setActualAward(award.id, '')}
+          className="rounded-lg border border-red-500/30 px-3 py-1.5 text-sm text-red-300 transition hover:bg-red-500/10"
+        >
+          Quitar
+        </button>
+      ) : (
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-zinc-300">¿Es el premio real?</span>
+          <button
+            onClick={() => {
+              setActualAward(award.id, leader);
+              toast.success(`${leader}: premio real guardado`);
+            }}
+            className="rounded-lg bg-brand-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-brand-500"
+          >
+            Sí
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SuggestionEditor({ award, saved, players }: { award: Award; saved: string[]; players: Player[] }) {
   const setSuggestions = useStore((s) => s.setSuggestions);
   const [url, setUrl] = useState('');
   const [text, setText] = useState(saved.join('\n'));
@@ -81,6 +129,8 @@ function SuggestionEditor({ award, saved }: { award: Award; saved: string[] }) {
           {saved.length ? `${saved.length} guardados` : 'Automáticos o fijos'}
         </span>
       </div>
+
+      {saved.length > 0 && <LeaderPanel award={award} leader={saved[0]} players={players} />}
 
       <div className="mt-3 flex flex-wrap gap-2">
         <input
@@ -117,7 +167,7 @@ function SuggestionEditor({ award, saved }: { award: Award; saved: string[] }) {
               }}
               className="rounded-lg px-3 py-1.5 text-sm text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-100"
             >
-              Quitar
+              Vaciar lista
             </button>
           )}
           <button
@@ -138,6 +188,7 @@ function SuggestionEditor({ award, saved }: { award: Award; saved: string[] }) {
 
 function SuggestionsPanel() {
   const season = useStore((s) => s.season);
+  const { players } = usePlayers();
   const saved = season.suggestions ?? {};
 
   return (
@@ -153,6 +204,7 @@ function SuggestionsPanel() {
             key={`${season.id}-${award.id}-${(saved[award.id] ?? []).join('|')}`}
             award={award}
             saved={saved[award.id] ?? []}
+            players={players}
           />
         ))}
       </ul>
