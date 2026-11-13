@@ -9,6 +9,7 @@ import type { Conference, Profile, StandingRow, Standings } from '../lib/types';
 import { CONF_LABEL, TEAMS_BY_ID } from '../data/teams';
 import { AWARDS } from '../data/awards';
 import { useStandings } from '../hooks/useStandings';
+import { ProvisionalTag } from './ProvisionalTag';
 import { useStore } from '../store/useStore';
 import { MAX_PER_CONFERENCE, POINTS, compareRanking, hasStarted, scoreAwards, scoreConference, scoreProfile } from '../lib/scoring';
 import { TeamLogo } from './TeamLogo';
@@ -329,6 +330,7 @@ function AwardsGrid({
   showReal: boolean;
   actualAwards: Record<string, string>;
 }) {
+  const provisional = useStore((s) => s.provisionalAwards);
   const scoresByPerson = people.map((p) => scoreAwards(p, actualAwards));
 
   return (
@@ -369,6 +371,7 @@ function AwardsGrid({
                 {showReal && (
                   <td className="border-l border-zinc-800 px-2 py-1.5">
                     {actualAwards[award.id] || <span className="text-zinc-600">Pendiente</span>}
+                    {provisional[award.id] && <ProvisionalTag />}
                   </td>
                 )}
               </tr>
@@ -382,7 +385,7 @@ function AwardsGrid({
 
 export function Overview() {
   const profiles = useStore((s) => s.profiles);
-  const actualAwards = useStore((s) => s.actualAwards);
+  const actualAwards = useStore((s) => s.scoringAwards);
   const [excluded, setExcluded] = useState<string[]>([]);
   const [showReal, setShowReal] = useState(true);
   const { data, isLoading, isError } = useStandings();

@@ -3,6 +3,7 @@ import clsx from 'clsx';
 import type { Conference, Profile, StandingRow } from '../lib/types';
 import { CONF_LABEL, TEAMS_BY_ID } from '../data/teams';
 import { useStandings } from '../hooks/useStandings';
+import { ProvisionalTag } from './ProvisionalTag';
 import { useStore } from '../store/useStore';
 import {
   MAX_PER_CONFERENCE,
@@ -167,7 +168,8 @@ function ConferenceCompare({
 }
 
 function AwardsCompare({ profile }: { profile: Profile }) {
-  const actualAwards = useStore((s) => s.actualAwards);
+  const actualAwards = useStore((s) => s.scoringAwards);
+  const provisional = useStore((s) => s.provisionalAwards);
   const scores = scoreAwards(profile, actualAwards);
 
   return (
@@ -198,6 +200,7 @@ function AwardsCompare({ profile }: { profile: Profile }) {
                   <td className={clsx('py-2 pr-3', s.pick ? '' : 'text-zinc-600')}>{s.pick || 'Sin elegir'}</td>
                   <td className="py-2 pr-3">
                     {actualAwards[award.id] || <span className="text-zinc-600">Pendiente</span>}
+                    {provisional[award.id] && <ProvisionalTag />}
                   </td>
                   <td
                     className={clsx(
@@ -219,7 +222,7 @@ function AwardsCompare({ profile }: { profile: Profile }) {
 
 export function Comparison({ profile }: { profile: Profile }) {
   const { data, isLoading, isError, refetch, isFetching, frozen } = useStandings();
-  const actualAwards = useStore((s) => s.actualAwards);
+  const actualAwards = useStore((s) => s.scoringAwards);
 
   if (isLoading) {
     return (

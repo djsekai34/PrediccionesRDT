@@ -17,6 +17,7 @@ import {
   signOut as firebaseSignOut,
 } from 'firebase/auth';
 import { toast } from 'sonner';
+import { AWARDS } from '../data/awards';
 import type { Conference, Profile, Season, Standings } from '../lib/types';
 import { auth, db, isAdminEmail } from '../lib/firebase';
 
@@ -31,6 +32,9 @@ interface Store {
   season: Season;
   profiles: Profile[];
   actualAwards: Record<string, string>;
+  /** Ganadores que puntúan: los reales y, si falta alguno, el primero de la lista de sugerencias (provisional). */
+  scoringAwards: Record<string, string>;
+  provisionalAwards: Record<string, boolean>;
   status: Status;
   error: string;
 
@@ -98,7 +102,7 @@ interface Raw {
 }
 
 // Calcula lo que ve la app: la temporada elegida (por defecto la vigente), sus personas y sus premios reales.
-function derive(r: Raw): Pick<Store, 'season' | 'profiles' | 'actualAwards' | 'activeId'> {
+function derive(r: Raw): Pick<Store, 'season' | 'profiles' | 'actualAwards' | 'scoringAwards' | 'provisionalAwards' | 'activeId'> {
   const list = r.seasons.length ? r.seasons : [DEFAULT_SEASON];
   const current = [...list].reverse().find((x) => !x.archived) ?? list[list.length - 1];
   const season = list.find((x) => x.id === r.seasonId) ?? current;
@@ -108,7 +112,21 @@ function derive(r: Raw): Pick<Store, 'season' | 'profiles' | 'actualAwards' | 'a
     .sort((a, b) => a.createdAt - b.createdAt);
   const actualAwards = { ...(season.id === first.id ? r.legacyAwards : {}), ...season.actualAwards };
   const activeId = profiles.some((p) => p.id === r.activeId) ? r.activeId : (profiles[0]?.id ?? null);
-  return { season, profiles, actualAwards, activeId };
+
+  // Mientras no haya ganador real, el primero de la lista de sugerencias cuenta como ganador provisional.
+  // En temporadas archivadas no se aplica: lo que no se apuntó se queda sin decidir.
+  const scoringAwards = { ...actualAwards };
+  const provisionalAwards: Record<string, boolean> = {};
+  if (!season.archived) {
+    for (const award of AWARDS) {
+      const leader = season.suggestions?.[award.id]?.[0];
+      if (!(actualAwards[award.id] ?? '').trim() && leader) {
+        scoringAwards[award.id] = leader;
+        provisionalAwards[award.id] = true;
+      }
+    }
+  }
+  return { season, profiles, actualAwards, scoringAwards, provisionalAwards, activeId };
 }
 
 function toProfile(id: string, d: DocumentData): Profile {

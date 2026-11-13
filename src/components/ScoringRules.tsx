@@ -101,6 +101,10 @@ export function ScoringRules() {
           <li>La clasificación se actualiza sola: los puntos cambian según avanza la temporada.</li>
           <li>Hasta que no haya partidos jugados, las conferencias no puntúan.</li>
           <li>Los ganadores reales de los premios los apunta el admin cuando se anuncian.</li>
+          <li>
+            Mientras un premio no tenga ganador real, quien va primero en la lista de candidatos cuenta como ganador
+            provisional y puntúa. Cuando se anuncie el real, se sustituye.
+          </li>
         </ul>
       </section>
     </div>
